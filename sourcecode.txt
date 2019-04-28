@@ -1,0 +1,571 @@
+loaded=false
+loadingtext=[[
+ fred has worked at the airport
+ money exchange desk his whole
+ life.
+ 
+ "his life is currency" 
+ 
+ literally.
+  
+ one day he decides he's had
+ enough, and he's going to quit
+ his job and buy a one way
+ ticket to bora bora!
+  
+ but he's going to need money..
+ 
+ press z to continue
+ ]]
+loadingout=""
+loadingcount=1
+mainmenu=true
+gameover = false
+endscreen = false
+
+helpstep=1
+helptext="press \139 and \145 to change \nthe exchange rate"
+
+fadeout=false
+fadecount=0
+phead=64
+pmouth=65
+px=16
+py=54
+pexit = false
+count=0
+timer = 0
+
+helpy=54
+
+custsprinit={96,72,128,104,160,136}
+custspr={96,72,128,104,160,136}
+custx={60,90,20,20,30,20}
+custyinit={69,77,77,85,85,69}
+custy={69,77,77,85,85,69}
+custstop={6,0,1,2,2,6}
+buying ={false,false,false,false,false,false}
+threshold=0.2
+crowd=3
+
+showmoney = false
+moneyy = 60
+
+exchangerate=25.500
+actualrate=24.478
+commission=0
+payouts={20,50,100}
+payout=100
+
+--dev cheats
+--commission=1950
+
+dialogue = ""
+dialogueret = "na"
+dialoguepanel = false
+dialoguepanelanc = 90
+dialoguepanely = 90
+dialoguepanelh = 36
+showinv = false
+invx=-50
+invbag={"plant","sign","music","helper"}
+invprice={50,100,250,500}
+invused={false,false,false,false}
+invsize=4
+invind=1
+upgrades=0
+
+actionout = 0
+actioninfo = ""
+actioninfoy = 140
+inputdelay = 0
+
+music(8)
+
+function bigspr(s,x,y)
+ spr(s,x,y)
+ spr(s+1,x+8,y)
+ spr(s+2,x+16,y)
+ spr(s+16,x,y+8)
+ spr(s+17,x+8,y+8)
+ spr(s+18,x+16,y+8)
+ spr(s+32,x,y+16)
+ spr(s+33,x+8,y+16)
+ spr(s+34,x+16,y+16)
+ spr(s+48,x,y+24)
+ spr(s+49,x+8,y+24)
+ spr(s+50,x+16,y+24)
+end
+
+function _update()
+ count+=1
+ if count > 180 then
+  count=0
+ end
+ if gameover == false then
+  if count%60 == 0 then
+   timer = timer + 1
+  end
+ end
+ if count%179 == 0 then
+  actualrate = actualrate + (rnd(100)-50)/500
+  actualrate=flr(actualrate*1000)/1000
+ end
+ if inputdelay >= 0 then
+  inputdelay-=1
+ end
+ if fadeout == true then
+  fadecount+=2
+ else
+  if fadecount > 0 then
+   fadecount-=2
+  end
+ end
+ if fadecount >= 64 then
+  music(8)
+  fadeout = false
+  endscreen = true
+ end
+ 
+ --endgame animation
+ if gameover == true then
+  if py < 65 then
+   py = py + 1
+  else
+   pexit = true
+  end
+  if pexit == true then
+   if py < 77 then
+    px = -96
+    py = 77
+    phead = 224
+    pmouth = phead + 1
+    music(16)
+   end
+   px = px + 1
+   if count%4 == 0 then
+    if phead == 224 then
+     phead = 226
+    else
+     phead = 224
+    end
+   end
+   if px > 140 then
+    fadeout = true
+    music(-1)
+   end
+  end
+ end
+ 
+ for c=1,crowd do
+  if count%4 == 0 then
+   if buying[c] == false then
+    if custspr[c] == custsprinit[c] then
+     custspr[c] = custsprinit[c] + 2
+    else
+     custspr[c] = custsprinit[c]
+    end
+   else
+    if custspr[c] == custsprinit[c] + 4 then
+     custspr[c] = custsprinit[c] + 6
+    else
+     custspr[c] = custsprinit[c] + 4
+    end
+   end
+  end
+  if count%1 == 0 then
+   if custstop[c] == custx[c] then
+    if exchangerate-actualrate < threshold and exchangerate-actualrate > 0 then
+     buying[c] = true
+    end
+   end
+   if buying[c] == true then
+    if custy[c] > 68 then
+     custy[c] = custy[c] - 1
+     custx[c] = custx[c] + 1
+    else
+     buying[c] = false
+     showmoney = true
+     if exchangerate-actualrate < threshold and exchangerate-actualrate > 0 then
+      payout = payouts[flr(rnd(#payouts))+1]
+      commission = commission + (payout*(exchangerate-actualrate))
+      commission = flr(commission)
+      sfx(16)
+      if commission >= 2000 then
+       commission = 2000
+       gameover = true
+       exchangerate = 999
+       helpstep = 99
+       music(-1)
+      end
+      if commission >= 500 and helpstep == 6 then
+       helpstep = 7
+      end
+      if pmouth == 65 then
+       pmouth = 67
+      else
+       pmouth = 65
+      end
+      if commission >= 50 and helpstep <= 3 then
+       helpstep = 5
+      end
+     end
+     if helpstep == 2 then
+      helpstep = 3
+     end
+    end 
+   else
+    if custy[c] < custyinit[c] then
+     custy[c] = custy[c] + 1
+    end
+    custx[c] = custx[c] + 1
+    if exchangerate < actualrate and helpstep == 2 then
+     helpstep = 4
+    end
+    if exchangerate >= actualrate and helpstep == 4 then
+     helpstep = 3
+    end
+   end
+  end
+  if custx[c] > 140 then
+   if gameover == false then
+    custx[c] = -16
+   end
+  end
+ end
+ 
+ --money popup from desk
+ if showmoney == true then
+  moneyy = moneyy - 1
+  if moneyy <= 46 then
+   showmoney = false
+   moneyy = 60
+  end
+ end
+ 
+ if btn(0) then
+  exchangerate=exchangerate-0.01
+  exchangerate=flr(exchangerate*1000)/1000
+  if helpstep == 1 then
+   helpstep = 2
+  end
+ end
+ if btn(1) then
+  exchangerate=exchangerate+0.01
+  exchangerate=flr(exchangerate*1000)/1000
+  if helpstep == 1 then
+   helpstep = 2
+  end
+ end
+ if btn(2) then
+  if showinv == true then
+   if invx > 0 and count%6 == 0 then
+    if invind > 1 then
+     invind = invind - 1
+    end
+   end
+  end
+ end
+ if btn(3) then
+  if showinv == true then
+   if invx > 0 and count%6 == 0 then
+    if invind < 4 then
+     invind = invind + 1
+    end
+   end
+  end
+ end
+ if btn(4) then
+  if mainmenu == true and loaded == true then
+    mainmenu = false
+    actualrate=24.478
+    music(-1)
+  end
+  if showinv == true then
+   if invx > 0 then
+    if invused[invind] == false then
+     if commission > invprice[invind] then
+      invused[invind] = true
+      commission = commission - invprice[invind]
+      threshold = threshold + 0.1
+      upgrades = upgrades + 1
+      if invind == 1 then
+       add(payouts,150)
+       crowd = crowd + 1
+      end
+      if invind == 2 then
+       add(payouts,200)
+       crowd = crowd + 1
+      end
+      if invind == 3 then
+       add(payouts,250)
+       crowd = crowd + 1
+       music(8)
+      end
+      if invind == 4 then
+       add(payouts,400)
+      end
+      if helpstep == 5 then
+       helpstep = 6
+      end
+      if invx == -64 or invx == 2 then
+       showinv = false
+      end
+     end
+    end
+   end
+  end
+ end
+ if btn(5) then
+  if invx == -64 or invx == 2 then
+   if showinv == false then
+    showinv = true
+   else
+    showinv = false
+   end
+  end
+ end
+ if showinv == false then
+  if invx > -64 then
+   invx-=2
+  end
+ end
+ if showinv == true then
+  if invx < 2 then
+   invx+=2
+  end
+ end
+
+ if pleg != 82 and moving == true and count%4 == 0 then
+  phead = 64
+  pleg = 82
+ else
+  if pleg != 80 and moving == true and count%4 == 0 then
+   pleg = 80
+  end
+ end
+
+ if loadingcount < 300 then
+  loadingcount+=1
+  loadingout = sub(loadingtext,1,loadingcount)
+ else
+  if loaded == false then
+   loaded = true
+  end
+ end
+ 
+ if helpstep == 2 then
+  helptext = 
+[[try reducing the rate
+close to the base rate in
+the top left. nobody is
+buying when its too high!]]
+ end
+ if helpstep == 3 then
+  helptext = 
+[[earn commission by making
+your rate slightly higher
+than the actual rate up 
+in the top left!]]
+ end
+ if helpstep == 4 then
+  helptext = 
+[[too low! if your rate is 
+lower than the base rate in 
+the top left, you dont
+make any commission!]]
+ end
+ if helpstep == 5 then
+  helptext = 
+[[how about an upgrade? x
+to open the shop and z to 
+buy a plant. people will
+visit and spend more!]]
+ end
+ if helpstep == 6 then
+  helptext = 
+[[with every upgrade you
+buy, people will spend more
+at the desk! they will also
+accept a higher rate..]]
+ end
+ if helpstep == 7 then
+  helptext = 
+[[great work! not far to go.
+dont forget to use all the
+upgrades to finish faster!]]
+ end
+ if helpstep == 99 then
+  helptext =
+[[ ]]
+ end
+end
+
+function adddelay(delay)
+ inputdelay+=delay
+end
+
+function inventory()
+ rectfill(invx,2,invx+64,14+(#invbag*10),1)
+ rect(invx,2,invx+64,14+(#invbag*10),9)
+ print("upgrades",invx+4,6,9)
+ for i=1,#invbag do
+  print(invbag[i],invx+8,6+(i*10),7)
+  print("$"..invprice[i],invx+42,6+(i*10),9)
+  if invused[i] == true then
+   line(invx+7,8+(i*10),invx+57,8+(i*10),8)
+  end
+  if invind == i then
+   line(invx+5,8+(i*10),invx+4,7+(i*10),8)
+   line(invx+5,8+(i*10),invx+4,9+(i*10),8)
+  end
+ end
+end
+
+function drawplayer()
+ --draw player
+ spr(phead,px,py)
+ spr(pmouth,px+8,py)
+ spr(phead+16,px,py+8)
+ spr(phead+17,px+8,py+8)
+end
+
+function drawdesk()
+ rectfill(0,68,40,79,8)
+ line(40,68,40,80,5)
+ line(0,65,42,65,5)
+ line(0,66,42,66,7)
+ line(0,67,41,67,7)
+ line(0,68,40,68,5)
+ line(48,60,48,72,5)
+ line(40,68,48,60,5)
+ line(39,67,46,60,7)
+ line(38,67,45,60,7)
+ line(40,67,47,60,7)
+ line(39,65,44,60,5)
+ line(45,60,48,60,5)
+ line(41,72,47,72,7)
+ if invused[2] == true then
+  print("money $ &",3,73,7)
+ end
+end
+
+function drawcustomers()
+ for c=1,crowd do
+  spr(custspr[c],custx[c],custy[c])
+  spr(custspr[c]+1,custx[c]+8,custy[c])
+  spr(custspr[c]+16,custx[c],custy[c]+8)
+  spr(custspr[c]+17,custx[c]+8,custy[c]+8)
+ end
+end
+
+function _draw()
+ cls()
+ --pink is transparency
+ palt(14,true)
+ palt(0,false)
+ 
+ --draw the floor tiles
+ rectfill(0,0,128,128,7)
+ line(0,72,128,72,5)
+ line(0,80,128,80,5)
+ line(0,88,128,88,5)
+ line(0,96,128,96,5)
+ line(0,104,128,104,5)
+ for i=0,12 do
+  line((i*16)-32,104,i*16,72,5)
+ end
+  
+ rectfill(0,0,43,9,1)
+ print("$1=&"..actualrate,3,3,9)
+ 
+ --draw sign
+ rect(51,55,95,65,5)
+ rect(56,65,58,72,5)
+ rect(88,65,90,72,5)
+ rectfill(52,56,94,64,1)
+ if gameover == true then
+  print("closed",54,58,9)
+ else
+  print("$1=&"..exchangerate,54,58,9)
+ end
+ 
+ if invused[1] == true then
+  spr(15,49,69)
+  spr(15,81,69)
+ end
+  
+ if invused[4] == true then
+  spr(168,1,helpy)
+  spr(169,9,helpy)
+  spr(184,1,helpy+8)
+  spr(185,9,helpy+8)
+ end
+ 
+ if pexit == false then
+  drawplayer()
+ end
+  
+ drawdesk()
+ 
+ drawcustomers()
+ 
+ if pexit == true then
+  drawplayer()
+ end
+  
+ --ui elements
+ spr(47,72,2)
+ print(helptext,14,20,0)
+ print("$"..commission.."/$2000",83,3,0)
+ if showmoney == true then
+  print("$"..payout,2,moneyy,3)
+ end
+ inventory()
+ 
+ rectfill(0,0,128,0+fadecount,0)
+ rectfill(0,0,0+fadecount,128,0)
+ rectfill(0,128,128,128-fadecount,0)
+ rectfill(128,0,128-fadecount,128,0)
+   
+ if mainmenu == true then
+  rectfill(0,0,128,128,8)
+  spr(192,4,5)
+  spr(193,12,5)
+  spr(194,20,5)
+  spr(195,28,5)
+  spr(196,36,5)
+  spr(197,44,5)
+  --spr(198,52,5)
+  --spr(199,60,5)
+  --spr(200,68,5)
+  spr(208,4,13)
+  spr(209,12,13)
+  spr(210,20,13)
+  spr(211,28,13)
+  spr(212,36,13)
+  spr(213,44,13)
+  --spr(214,52,13)
+  --spr(215,60,13)
+  --spr(216,68,13)
+  print("by josh",99,7,1)
+  print("duffety-wong",79,14,1)
+  print(loadingout,0,28,7)
+ end
+ 
+ if endscreen == true then
+  cls()
+  rectfill(0,0,128,128,12)
+  rectfill(0,80,128,128,15)
+  circfill(100,12,8,9)
+  print("you made it to bora bora!",14,36,7)
+  print("time: "..timer.." seconds",30,56,7)
+  print("upgrades used: "..upgrades,30,64,7)
+  spr(224,56,80)
+  spr(225,64,80)
+  spr(240,56,88)
+  spr(241,64,88)
+  print("thanks for playing!",24,108,1)
+  
+ end
+end
